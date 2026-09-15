@@ -196,7 +196,15 @@ class HydrawiseApp extends Homey.App {
 
   async stopPolling() {
     if (this.timerId) {
-      clearTimeout(this.timerId);
+      // MUST be the SDK's own clearInterval, matching this.homey.setInterval
+      // above. The global clearTimeout was being used here, which does not
+      // reliably cancel a managed interval — every startPolling() (app init,
+      // a settings change, an interval change, or either of the two flow
+      // cards) could then leave the previous loop running. Two or three
+      // parallel loops against the same account is enough to trip Hunter's
+      // rate limit, which is why a 429 cleared after restarting the app: the
+      // restart killed the accumulated timers.
+      this.homey.clearInterval(this.timerId);
       this.timerId = null;
     }
   }
