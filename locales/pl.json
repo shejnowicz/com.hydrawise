@@ -1,0 +1,11 @@
+{
+  "rain_sensor": {
+    "loading": "Odczytywanie czujnika deszczu…",
+    "login_required": "Zaloguj się ponownie do Hydrawise przez Napraw.",
+    "connection_failed": "Nie można połączyć się z Hydrawise.",
+    "rate_limited": "Limit zapytań Hydrawise. Ponowienie nastąpi później.",
+    "invalid_response": "Hydrawise nie zwrócił prawidłowych danych czujnika.",
+    "sensor_unavailable": "Sterownik jest offline lub stan czujnika jest nieznany.",
+    "different_account": "Użyj tego samego konta Hydrawise co dla dodanych czujników deszczu."
+  }
+}

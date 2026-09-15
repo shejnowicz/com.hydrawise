@@ -190,6 +190,68 @@
   "drivers": [
     {
       "name": {
+        "en": "Rain sensor",
+        "pl": "Czujnik deszczu"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "alarm_generic"
+      ],
+      "capabilitiesOptions": {
+        "alarm_generic": {
+          "title": {
+            "en": "Rain sensor active",
+            "pl": "Czujnik deszczu aktywny"
+          }
+        }
+      },
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "cloud"
+      ],
+      "pair": [
+        {
+          "id": "login",
+          "template": "login_credentials",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "repair": [
+        {
+          "id": "login",
+          "template": "login_credentials",
+          "navigation": {
+            "next": "done"
+          }
+        },
+        {
+          "id": "done",
+          "template": "done"
+        }
+      ],
+      "images": {
+        "small": "/drivers/rain_sensor/assets/images/small.png",
+        "large": "/drivers/rain_sensor/assets/images/large.png"
+      },
+      "id": "rain_sensor"
+    },
+    {
+      "name": {
         "en": "Zone"
       },
       "class": "sprinkler",

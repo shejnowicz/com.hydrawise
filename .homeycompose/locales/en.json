@@ -20,5 +20,14 @@
     "invalidApiKey": "Invalid API key.",
     "emptyApiKey": "Please fill in a value",
     "apiKeyGetError": "Could not get API key"
+  },
+  "rain_sensor": {
+    "loading": "Reading rain sensor…",
+    "login_required": "Sign in to Hydrawise again using Repair.",
+    "connection_failed": "Cannot connect to Hydrawise.",
+    "rate_limited": "Hydrawise request limit reached. Retrying later.",
+    "invalid_response": "Hydrawise did not provide a valid sensor response.",
+    "sensor_unavailable": "Controller offline or sensor state unknown.",
+    "different_account": "Use the same Hydrawise account as the already paired rain sensors."
   }
 }
