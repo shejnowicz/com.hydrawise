@@ -81,13 +81,15 @@ class HydraWiseDevice extends Device {
   async updateStatus(updatedRelay) {
     const running = updatedRelay.time === 1
     const runLength = running ? updatedRelay.run / 60 : 0;
-    //this.isChangedByStatusUpdate = true;
-    this.setCapabilityValue("meter_remaining_duration", Math.ceil(runLength));
-    this.setCapabilityValue( "meter_time_next_run_duration", running ? 0 : updatedRelay.run / 60 );
-    this.updateRunning( running );
-
-    const nextrunttime = Conversions.toDaysMinutes( updatedRelay.time )
-    this.setCapabilityValue("meter_time_next_run", nextrunttime );
+    const nextrunttime = Conversions.toDaysMinutes(updatedRelay.time);
+    // The polling helper restores availability only after these writes succeed.
+    await Promise.all([
+      this.setCapabilityValue("meter_remaining_duration", Math.ceil(runLength)),
+      this.setCapabilityValue("meter_time_next_run_duration", running ? 0 : updatedRelay.run / 60),
+      this.setCapabilityValue("is_running", running),
+      this.setCapabilityValue("onoff", running),
+      this.setCapabilityValue("meter_time_next_run", nextrunttime),
+    ]);
   }
 
   getRemainingDuration() {

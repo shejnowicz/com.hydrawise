@@ -18,7 +18,7 @@ function stub(name, exports) {
   stubs.set(name, true);
   require.cache[name] = { id: name, filename: name, loaded: true, exports };
 }
-stub('homey', { SimpleClass: class { log() {} } });
+stub('homey', { SimpleClass: class { log() {} }, Device: class {} });
 
 let getCalls = [];
 let getImpl = async () => ({ data: { relays: [] } });
@@ -37,6 +37,7 @@ function device(relayId, controllerId = 'c1', apiKey = 'k1') {
     getData: (field) => (field === 'controllerId' ? { controllerId } : field === 'apiKey' ? { apiKey } : { id: relayId }),
     updateStatus: () => {},
     setUnavailable: () => {},
+    setAvailable: () => {},
     getRemainingDuration: () => 0,
   };
 }
@@ -84,6 +85,61 @@ test('a failed batch is not reused by the next loop', async () => {
   getImpl = async () => ({ data: { relays: [{ relay_id: 1 }] } });
   await zone.updateZoneStatus(device(1), 2);
   assert.strictEqual(getCalls.length, 2);
+});
+
+test('all six zones recover after DNS failure without replaying watering commands', async () => {
+  const zone = makeZone();
+  const devices = [1, 2, 3, 4, 5, 6].map(id => ({
+    ...device(id), available: true,
+    async setUnavailable() { this.available = false; },
+    async setAvailable() { this.available = true; },
+  }));
+  getImpl = async () => { throw new Error('getaddrinfo EAI_AGAIN api.hydrawise.com'); };
+  await Promise.all(devices.map(d => zone.updateZoneStatus(d, 1)));
+  assert.ok(devices.every(d => !d.available));
+  getImpl = async () => ({ data: { relays: devices.map((d, i) => ({ relay_id: i + 1, time: 100, run: 0 })) } });
+  await Promise.all(devices.map(d => zone.updateZoneStatus(d, 2)));
+  assert.ok(devices.every(d => d.available));
+  assert.strictEqual(getCalls.length, 2);
+  assert.ok(getCalls.every(([url]) => url.endsWith('statusschedule.php')));
+});
+
+test('missing relay cannot restore availability', async () => {
+  const zone = makeZone();
+  let restored = false;
+  await zone.updateZoneStatus({ ...device(99), setAvailable() { restored = true; } }, 1);
+  assert.strictEqual(restored, false);
+});
+
+test('availability waits for all capability writes to finish', async () => {
+  const Device = require('../drivers/zone/device');
+  const d = Object.assign(new Device(), device(1));
+  d.updateStatus = Device.prototype.updateStatus;
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  let restored = false;
+  let writes = 0;
+  d.setCapabilityValue = async () => { writes++; await pending; };
+  d.setAvailable = async () => { restored = true; };
+  getImpl = async () => ({ data: { relays: [{ relay_id: 1, time: 100, run: 0 }] } });
+  const poll = makeZone().updateZoneStatus(d, 1);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.strictEqual(restored, false);
+  release();
+  await poll;
+  assert.strictEqual(writes, 5);
+  assert.strictEqual(restored, true);
+});
+
+test('failed capability application keeps the zone unavailable', async () => {
+  const zone = makeZone();
+  let available = false;
+  await zone.updateZoneStatus({ ...device(1),
+    async updateStatus() { throw new Error('write failed'); },
+    async setAvailable() { available = true; },
+    async setUnavailable() { available = false; },
+  }, 1);
+  assert.strictEqual(available, false);
 });
 
 test('a 429 surfaces as rate_limited and blocks further calls during the cool-off', async () => {
